@@ -276,11 +276,12 @@ export default function Home() {
 
   // Mouse wheel zoom
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
+    const handleWheel = (e: Event) => {
       if (!lightboxImage) return;
 
+      const wheelEvent = e as WheelEvent;
       e.preventDefault();
-      if (e.deltaY < 0) {
+      if (wheelEvent.deltaY < 0) {
         zoomIn();
       } else {
         zoomOut();
