@@ -295,17 +295,40 @@ export default function Home() {
     }
   }, [lightboxImage, zoomLevel]);
 
-  // Disable body scroll when lightbox is open
+  // Disable body scroll when lightbox is open (desktop and mobile)
   useEffect(() => {
     if (lightboxImage) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+      // Store current scroll position
+      const scrollY = window.scrollY;
 
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+      // Prevent scroll on body
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+
+      // Prevent touch scroll on mobile
+      const preventScroll = (e: TouchEvent) => {
+        const target = e.target as HTMLElement;
+        // Allow scrolling inside the lightbox content if needed
+        if (!target.closest('.lightbox-container')) {
+          e.preventDefault();
+        }
+      };
+
+      document.addEventListener('touchmove', preventScroll, { passive: false });
+
+      return () => {
+        // Restore scroll position
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+
+        document.removeEventListener('touchmove', preventScroll);
+      };
+    }
   }, [lightboxImage]);
 
   // Copyright protection: disable right-click and drag on images
