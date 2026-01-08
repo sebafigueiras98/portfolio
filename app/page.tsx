@@ -295,6 +295,19 @@ export default function Home() {
     }
   }, [lightboxImage, zoomLevel]);
 
+  // Disable body scroll when lightbox is open
+  useEffect(() => {
+    if (lightboxImage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [lightboxImage]);
+
   // Copyright protection: disable right-click and drag on images
   useEffect(() => {
     const preventRightClick = (e: MouseEvent) => {
