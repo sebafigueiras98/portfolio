@@ -19,9 +19,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="overflow-x-hidden">
       <body
-        className={`${instrumentSerif.variable} antialiased`}
+        className={`${instrumentSerif.variable} antialiased overflow-x-hidden`}
       >
         {/* SVG Noise Filter for grain texture */}
         <svg className="fixed w-0 h-0">

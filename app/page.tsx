@@ -70,7 +70,7 @@ const formatAperture = (fNumber?: number): string => {
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState<Category>('color');
-  const [visibleCount, setVisibleCount] = useState(15);
+  const [visibleCount, setVisibleCount] = useState(16);
   const [featuredImages, setFeaturedImages] = useState<FeaturedImage[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +82,33 @@ export default function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentCenterIndex, setCurrentCenterIndex] = useState(0);
   const [imageColors, setImageColors] = useState<Record<string, string>>({});
+  const [isLargeViewport, setIsLargeViewport] = useState(false);
+  const [isUltraWideViewport, setIsUltraWideViewport] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Detect scroll position for sticky nav background
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 100);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Detect large viewport (4K/ultrawide displays)
+  useEffect(() => {
+    const checkViewportSize = () => {
+      setIsLargeViewport(window.innerWidth >= 1920);
+      setIsUltraWideViewport(window.innerWidth >= 2560);
+    };
+    checkViewportSize();
+    window.addEventListener('resize', checkViewportSize);
+    return () => window.removeEventListener('resize', checkViewportSize);
+  }, []);
 
   // Fetch featured images on mount
   useEffect(() => {
@@ -152,7 +179,7 @@ export default function Home() {
   const displayedImages = galleryImages.slice(0, visibleCount);
 
   const loadMore = () => {
-    setVisibleCount(prev => prev + 15);
+    setVisibleCount(prev => prev + 16);
   };
 
   const nextCarouselImage = () => {
@@ -181,12 +208,16 @@ export default function Home() {
 
   const closeLightbox = () => {
     setLightboxImage(null);
+    setZoomLevel(1);
+    setPanPosition({ x: 0, y: 0 });
   };
 
   const nextImage = () => {
     if (currentImageIndex < lightboxImages.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
       setLightboxImage(lightboxImages[currentImageIndex + 1]);
+      setZoomLevel(1);
+      setPanPosition({ x: 0, y: 0 });
     }
   };
 
@@ -194,7 +225,28 @@ export default function Home() {
     if (currentImageIndex > 0) {
       setCurrentImageIndex(currentImageIndex - 1);
       setLightboxImage(lightboxImages[currentImageIndex - 1]);
+      setZoomLevel(1);
+      setPanPosition({ x: 0, y: 0 });
     }
+  };
+
+  const zoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.5, 4));
+  };
+
+  const zoomOut = () => {
+    setZoomLevel(prev => {
+      const newZoom = Math.max(prev - 0.5, 1);
+      if (newZoom === 1) {
+        setPanPosition({ x: 0, y: 0 });
+      }
+      return newZoom;
+    });
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(1);
+    setPanPosition({ x: 0, y: 0 });
   };
 
   // Auto-advance carousel
@@ -222,24 +274,88 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxImage, currentImageIndex, lightboxImages]);
 
+  // Mouse wheel zoom
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (!lightboxImage) return;
+
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        zoomIn();
+      } else {
+        zoomOut();
+      }
+    };
+
+    const lightboxEl = document.querySelector('.lightbox-container');
+    if (lightboxEl) {
+      lightboxEl.addEventListener('wheel', handleWheel, { passive: false });
+      return () => lightboxEl.removeEventListener('wheel', handleWheel);
+    }
+  }, [lightboxImage, zoomLevel]);
+
+  // Copyright protection: disable right-click and drag on images
+  useEffect(() => {
+    const preventRightClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' || target.style.backgroundImage) {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    const preventDrag = (e: DragEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    const preventSelection = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' || target.style.backgroundImage) {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('contextmenu', preventRightClick);
+    document.addEventListener('dragstart', preventDrag);
+    document.addEventListener('selectstart', preventSelection);
+
+    return () => {
+      document.removeEventListener('contextmenu', preventRightClick);
+      document.removeEventListener('dragstart', preventDrag);
+      document.removeEventListener('selectstart', preventSelection);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Centered Container for Header */}
-      <div className="max-w-[1199px] mx-auto px-6 md:px-10">
-        <header className="flex items-center justify-between py-6 md:py-8">
-          <h1 className="font-serif text-[24px] md:text-[32px] leading-normal">
-            SEBA FIGUEIRAS
-          </h1>
-          <nav className="flex gap-4 font-serif text-[24px] md:text-[32px] leading-normal underline">
-            <a href="mailto:sebafigueiras@gmail.com" className="hover:opacity-70 transition-opacity">
-              email
-            </a>
-            <a href="https://instagram.com/sebafigueiras" target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">
-              instagram
-            </a>
-          </nav>
-        </header>
-      </div>
+      {/* Fixed Header */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled ? 'bg-[#0a0a0a]/95 backdrop-blur-sm shadow-lg' : 'bg-transparent'
+        }`}
+      >
+        <div className="max-w-[1199px] mx-auto px-6 md:px-10">
+          <div className="flex items-center justify-between py-6 md:py-8">
+            <h1 className="font-serif text-[24px] md:text-[32px] leading-normal">
+              SEBA FIGUEIRAS
+            </h1>
+            <nav className="flex gap-4 font-serif text-[24px] md:text-[32px] leading-normal underline">
+              <a href="mailto:sebafigueiras@gmail.com" className="hover:opacity-70 transition-opacity">
+                email
+              </a>
+              <a href="https://instagram.com/sebafigueiras" target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">
+                instagram
+              </a>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* Spacer to prevent content from going under fixed header */}
+      <div className="h-[88px] md:h-[96px]"></div>
 
       {/* Hero Section - Scrollable Carousel with Center Focus */}
       <section className="py-8 md:py-12 relative overflow-visible">
@@ -264,7 +380,85 @@ export default function Home() {
             </button>
 
             {/* Carousel Images */}
-            <div className="flex gap-2 md:gap-4 items-center justify-center relative z-10">
+            <div className="flex gap-2 md:gap-4 items-center justify-center relative z-10 select-none">
+              {/* Ultra Far Left image - Only on ultra-wide viewports */}
+              {isUltraWideViewport && featuredImages.length >= 7 && (() => {
+                const ultraFarLeftIndex = (currentCenterIndex - 3 + featuredImages.length) % featuredImages.length;
+                const item = featuredImages[ultraFarLeftIndex];
+                const imageUrl = urlFor(item.image).url();
+                const allCarouselImages = featuredImages.map(img => urlFor(img.image).url());
+                const allCarouselMetadata = featuredImages.map(img => img.image.asset?.metadata || null);
+                const allCarouselCaptions = featuredImages.map(img => img.caption);
+                const allCarouselLocations = featuredImages.map(img => img.location);
+                return (
+                  <div
+                    key="carousel-ultra-far-left"
+                    className="relative h-[741px] w-[494px] flex-shrink-0 rounded-lg overflow-hidden cursor-pointer bg-zinc-900"
+                    onClick={() => openLightbox(imageUrl, allCarouselImages, allCarouselMetadata, allCarouselCaptions, allCarouselLocations, ultraFarLeftIndex)}
+                    style={{
+                      opacity: 0.05,
+                      transition: 'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 transition-all duration-1000 ease-in-out"
+                      style={{
+                        backgroundImage: `url(${urlFor(item.image).width(494).height(741).fit('crop').crop('center').quality(90).url()})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    {/* Gradient overlay - left to right */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%)'
+                      }}
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* Far Left image - Only on large viewports */}
+              {isLargeViewport && featuredImages.length >= 5 && (() => {
+                const farLeftIndex = (currentCenterIndex - 2 + featuredImages.length) % featuredImages.length;
+                const item = featuredImages[farLeftIndex];
+                const imageUrl = urlFor(item.image).url();
+                const allCarouselImages = featuredImages.map(img => urlFor(img.image).url());
+                const allCarouselMetadata = featuredImages.map(img => img.image.asset?.metadata || null);
+                const allCarouselCaptions = featuredImages.map(img => img.caption);
+                const allCarouselLocations = featuredImages.map(img => img.location);
+                return (
+                  <div
+                    key="carousel-far-left"
+                    className="relative h-[741px] w-[494px] flex-shrink-0 rounded-lg overflow-hidden cursor-pointer bg-zinc-900"
+                    onClick={() => openLightbox(imageUrl, allCarouselImages, allCarouselMetadata, allCarouselCaptions, allCarouselLocations, farLeftIndex)}
+                    style={{
+                      opacity: 0.4,
+                      transition: 'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 transition-all duration-1000 ease-in-out"
+                      style={{
+                        backgroundImage: `url(${urlFor(item.image).width(494).height(741).fit('crop').crop('center').quality(90).url()})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    {/* Gradient overlay - left to right */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)'
+                      }}
+                    />
+                  </div>
+                );
+              })()}
+
               {/* Left image - Mobile: 262x393, Desktop: 494x741 */}
               {(() => {
                 const leftIndex = (currentCenterIndex - 1 + featuredImages.length) % featuredImages.length;
@@ -279,6 +473,10 @@ export default function Home() {
                     key="carousel-left"
                     className="relative h-[393px] w-[262px] md:h-[741px] md:w-[494px] flex-shrink-0 rounded-lg overflow-hidden cursor-pointer bg-zinc-900"
                     onClick={() => openLightbox(imageUrl, allCarouselImages, allCarouselMetadata, allCarouselCaptions, allCarouselLocations, leftIndex)}
+                    style={{
+                      opacity: 0.6,
+                      transition: 'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
                   >
                     <div
                       className="absolute inset-0 transition-all duration-1000 ease-in-out"
@@ -287,6 +485,13 @@ export default function Home() {
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    {/* Gradient overlay - left to right */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)'
                       }}
                     />
                   </div>
@@ -306,6 +511,10 @@ export default function Home() {
                     key="carousel-center"
                     className="relative h-[477px] w-[318px] md:h-[849px] md:w-[566px] flex-shrink-0 rounded-lg overflow-hidden cursor-pointer bg-zinc-900"
                     onClick={() => openLightbox(imageUrl, allCarouselImages, allCarouselMetadata, allCarouselCaptions, allCarouselLocations, currentCenterIndex)}
+                    style={{
+                      opacity: 1,
+                      transition: 'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
                   >
                     <div
                       className="absolute inset-0 transition-all duration-1000 ease-in-out"
@@ -334,6 +543,10 @@ export default function Home() {
                     key="carousel-right"
                     className="relative h-[393px] w-[262px] md:h-[741px] md:w-[494px] flex-shrink-0 rounded-lg overflow-hidden cursor-pointer bg-zinc-900"
                     onClick={() => openLightbox(imageUrl, allCarouselImages, allCarouselMetadata, allCarouselCaptions, allCarouselLocations, rightIndex)}
+                    style={{
+                      opacity: 0.6,
+                      transition: 'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
                   >
                     <div
                       className="absolute inset-0 transition-all duration-1000 ease-in-out"
@@ -342,6 +555,91 @@ export default function Home() {
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    {/* Gradient overlay - right to left */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to left, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)'
+                      }}
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* Far Right image - Only on large viewports */}
+              {isLargeViewport && featuredImages.length >= 5 && (() => {
+                const farRightIndex = (currentCenterIndex + 2) % featuredImages.length;
+                const item = featuredImages[farRightIndex];
+                const imageUrl = urlFor(item.image).url();
+                const allCarouselImages = featuredImages.map(img => urlFor(img.image).url());
+                const allCarouselMetadata = featuredImages.map(img => img.image.asset?.metadata || null);
+                const allCarouselCaptions = featuredImages.map(img => img.caption);
+                const allCarouselLocations = featuredImages.map(img => img.location);
+                return (
+                  <div
+                    key="carousel-far-right"
+                    className="relative h-[741px] w-[494px] flex-shrink-0 rounded-lg overflow-hidden cursor-pointer bg-zinc-900"
+                    onClick={() => openLightbox(imageUrl, allCarouselImages, allCarouselMetadata, allCarouselCaptions, allCarouselLocations, farRightIndex)}
+                    style={{
+                      opacity: 0.4,
+                      transition: 'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 transition-all duration-1000 ease-in-out"
+                      style={{
+                        backgroundImage: `url(${urlFor(item.image).width(494).height(741).fit('crop').crop('center').quality(90).url()})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    {/* Gradient overlay - right to left */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)'
+                      }}
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* Ultra Far Right image - Only on ultra-wide viewports */}
+              {isUltraWideViewport && featuredImages.length >= 7 && (() => {
+                const ultraFarRightIndex = (currentCenterIndex + 3) % featuredImages.length;
+                const item = featuredImages[ultraFarRightIndex];
+                const imageUrl = urlFor(item.image).url();
+                const allCarouselImages = featuredImages.map(img => urlFor(img.image).url());
+                const allCarouselMetadata = featuredImages.map(img => img.image.asset?.metadata || null);
+                const allCarouselCaptions = featuredImages.map(img => img.caption);
+                const allCarouselLocations = featuredImages.map(img => img.location);
+                return (
+                  <div
+                    key="carousel-ultra-far-right"
+                    className="relative h-[741px] w-[494px] flex-shrink-0 rounded-lg overflow-hidden cursor-pointer bg-zinc-900"
+                    onClick={() => openLightbox(imageUrl, allCarouselImages, allCarouselMetadata, allCarouselCaptions, allCarouselLocations, ultraFarRightIndex)}
+                    style={{
+                      opacity: 0.05,
+                      transition: 'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 transition-all duration-1000 ease-in-out"
+                      style={{
+                        backgroundImage: `url(${urlFor(item.image).width(494).height(741).fit('crop').crop('center').quality(90).url()})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    {/* Gradient overlay - right to left */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%)'
                       }}
                     />
                   </div>
@@ -374,7 +672,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   setActiveCategory('color');
-                  setVisibleCount(15);
+                  setVisibleCount(16);
                 }}
                 className={`hover:opacity-70 transition-opacity ${activeCategory === 'color' ? 'underline' : ''}`}
               >
@@ -383,7 +681,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   setActiveCategory('blancoYNegro');
-                  setVisibleCount(15);
+                  setVisibleCount(16);
                 }}
                 className={`hover:opacity-70 transition-opacity ${activeCategory === 'blancoYNegro' ? 'underline' : ''}`}
               >
@@ -397,7 +695,7 @@ export default function Home() {
                 <p className="font-serif text-2xl">Loading...</p>
               </div>
             ) : displayedImages.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 select-none">
                 {displayedImages.map((item, index) => {
                   const imageUrl = urlFor(item.image).url();
                   const allGalleryImages = displayedImages.map(img => urlFor(img.image).url());
@@ -407,7 +705,7 @@ export default function Home() {
                   return (
                     <div
                       key={item._id}
-                      className="relative h-[340px] rounded-lg overflow-hidden bg-zinc-800 cursor-pointer"
+                      className="relative aspect-[2/3] rounded-lg overflow-hidden bg-zinc-800 cursor-pointer"
                       onClick={() => openLightbox(imageUrl, allGalleryImages, allGalleryMetadata, allGalleryCaptions, allGalleryLocations, index)}
                     >
                       <Image
@@ -439,10 +737,19 @@ export default function Home() {
         </section>
       </div>
 
+      {/* Footer */}
+      <footer className="border-t border-zinc-800 py-8 mt-16">
+        <div className="max-w-[1199px] mx-auto px-6 md:px-10">
+          <p className="font-serif text-sm text-zinc-400 text-center">
+            © 2026 Seba Figueiras. Todos los derechos reservados. Queda prohibido su uso no autorizado.
+          </p>
+        </div>
+      </footer>
+
       {/* Lightbox Overlay */}
       {lightboxImage && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4"
+          className="lightbox-container fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4"
           onClick={closeLightbox}
         >
           <button
@@ -477,18 +784,102 @@ export default function Home() {
           )}
 
           <div
-            className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 max-w-[95vw] w-full"
+            className="relative flex flex-col items-center justify-center gap-6 max-w-[95vw] w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Image */}
-            <img
-              src={lightboxImage}
-              alt="Full screen image"
-              className="max-w-full md:max-w-[70vw] max-h-[60vh] md:max-h-[90vh] object-contain"
-            />
+            {/* Image and Zoom Controls Row */}
+            <div className="flex flex-row items-center justify-center gap-8">
+              {/* Image with colored shadow */}
+              <div
+                className="relative overflow-hidden"
+                style={{ cursor: zoomLevel > 1 ? 'move' : 'default' }}
+                onMouseDown={(e) => {
+                  if (zoomLevel > 1) {
+                    e.stopPropagation();
+                    setIsDragging(true);
+                    setDragStart({ x: e.clientX - panPosition.x, y: e.clientY - panPosition.y });
+                  }
+                }}
+                onMouseMove={(e) => {
+                  if (isDragging && zoomLevel > 1) {
+                    e.stopPropagation();
+                    setPanPosition({
+                      x: e.clientX - dragStart.x,
+                      y: e.clientY - dragStart.y
+                    });
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (zoomLevel > 1) {
+                    e.stopPropagation();
+                    setIsDragging(false);
+                  }
+                }}
+                onMouseLeave={() => setIsDragging(false)}
+              >
+                <img
+                  src={lightboxImage}
+                  alt="Full screen image"
+                  className="max-w-full md:max-w-[75vw] max-h-[70vh] md:max-h-[85vh] object-contain select-none pointer-events-none relative z-10 transition-transform duration-200"
+                  draggable="false"
+                  style={{
+                    filter: `drop-shadow(0 0 250px ${imageColors[lightboxImage] || 'rgba(255,255,255,0.15)'}) drop-shadow(0 0 150px ${imageColors[lightboxImage] || 'rgba(255,255,255,0.1)'})`,
+                    transform: `scale(${zoomLevel}) translate(${panPosition.x / zoomLevel}px, ${panPosition.y / zoomLevel}px)`,
+                    transformOrigin: 'center center'
+                  }}
+                />
+              </div>
 
-            {/* Metadata Panel - Below on mobile, Right on desktop */}
-            <div className="flex flex-col gap-4 md:gap-6 max-w-full md:max-w-xs w-full md:w-auto">
+              {/* Zoom Controls */}
+              <div className="hidden md:flex flex-col gap-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    zoomIn();
+                  }}
+                  className="bg-black bg-opacity-70 text-white w-16 h-16 rounded-lg hover:bg-opacity-90 transition-all font-serif text-4xl"
+                  title="Zoom in"
+                >
+                  +
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    zoomOut();
+                  }}
+                  className="bg-black bg-opacity-70 text-white w-16 h-16 rounded-lg hover:bg-opacity-90 transition-all font-serif text-4xl"
+                  title="Zoom out"
+                >
+                  −
+                </button>
+                {zoomLevel > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      resetZoom();
+                    }}
+                    className="bg-black bg-opacity-70 text-white w-16 h-16 rounded-lg hover:bg-opacity-90 transition-all font-serif text-base"
+                    title="Reset zoom"
+                  >
+                    1:1
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Copyright Notice - Below image, centered */}
+            <div className="text-center">
+              <span className="text-white text-xs font-serif">
+                © 2026 Seba Figueiras
+              </span>
+              <span className="text-zinc-400 text-xs font-serif"> · </span>
+              <span className="text-zinc-400 text-xs font-serif">
+                Todos los derechos reservados
+              </span>
+            </div>
+
+            {/* Metadata Panel - Hidden, keeping for reference */}
+            <div className="hidden flex-col gap-4 md:gap-6 max-w-full md:max-w-xs w-full md:w-auto">
               {/* Caption and Location */}
               {(lightboxCaptions[currentImageIndex] || lightboxLocations[currentImageIndex]) && (
                 <div className="bg-black bg-opacity-70 px-6 py-4 rounded-lg">
@@ -558,6 +949,18 @@ export default function Home() {
                   )}
                 </div>
               )}
+
+              {/* Copyright Notice - Always visible */}
+              <div className="bg-black bg-opacity-70 px-6 py-4 rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-white text-xs font-serif">
+                    © 2026 Seba Figueiras
+                  </span>
+                  <span className="text-zinc-400 text-xs mt-1 font-serif">
+                    Todos los derechos reservados
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
