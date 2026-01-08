@@ -11,6 +11,18 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "Seba Figueiras - Photography Portfolio",
   description: "Photography portfolio by Seba Figueiras",
+  icons: {
+    icon: [
+      {
+        url: '/icon-light.png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/icon-dark.png',
+        media: '(prefers-color-scheme: dark)',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

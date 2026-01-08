@@ -788,9 +788,17 @@ export default function Home() {
             className="relative flex flex-col items-center justify-center gap-6 max-w-[95vw] w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Image and Zoom Controls Row */}
-            <div className="flex flex-row items-center justify-center gap-8">
-              {/* Image with colored shadow */}
+            {/* Location - Above image, centered */}
+            {lightboxLocations[currentImageIndex] && (
+              <div className="text-center">
+                <span className="text-white text-base font-serif">
+                  {lightboxLocations[currentImageIndex]}
+                </span>
+              </div>
+            )}
+
+            {/* Image - Centered */}
+            <div className="relative flex items-center justify-center">
               <div
                 className="relative overflow-hidden"
                 style={{ cursor: zoomLevel > 1 ? 'move' : 'default' }}
@@ -821,7 +829,7 @@ export default function Home() {
                 <img
                   src={lightboxImage}
                   alt="Full screen image"
-                  className="max-w-full md:max-w-[75vw] max-h-[70vh] md:max-h-[85vh] object-contain select-none pointer-events-none relative z-10 transition-transform duration-200"
+                  className="max-w-full md:max-w-[80vw] max-h-[70vh] md:max-h-[85vh] object-contain select-none pointer-events-none relative z-10 transition-transform duration-200"
                   draggable="false"
                   style={{
                     filter: `drop-shadow(0 0 250px ${imageColors[lightboxImage] || 'rgba(255,255,255,0.15)'}) drop-shadow(0 0 150px ${imageColors[lightboxImage] || 'rgba(255,255,255,0.1)'})`,
@@ -831,8 +839,8 @@ export default function Home() {
                 />
               </div>
 
-              {/* Zoom Controls */}
-              <div className="hidden md:flex flex-col gap-3">
+              {/* Zoom Controls - Absolutely positioned to the right */}
+              <div className="hidden md:flex flex-col gap-3 absolute right-0 translate-x-[calc(100%+2rem)]">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
