@@ -1,10 +1,12 @@
 import { defineType, defineField } from 'sanity';
+import { orderRankField } from '@sanity/orderable-document-list';
 
 export default defineType({
   name: 'galleryImage',
   title: 'Gallery Images',
   type: 'document',
   fields: [
+    orderRankField({ type: 'galleryImage' }),
     defineField({
       name: 'title',
       title: 'Title',
@@ -40,7 +42,8 @@ export default defineType({
       title: 'Order',
       type: 'number',
       description: 'Position in the gallery (lower numbers appear first)',
-      validation: (Rule) => Rule.required().min(0),
+      hidden: true, // Hidden - use drag & drop to reorder instead
+      initialValue: 0,
     }),
     defineField({
       name: 'caption',
@@ -54,6 +57,18 @@ export default defineType({
       title: 'Location',
       type: 'string',
       description: 'Where was this photo taken?',
+    }),
+    defineField({
+      name: 'collections',
+      title: 'Collections',
+      type: 'array',
+      description: 'Add this image to one or more collections (optional)',
+      of: [{
+        type: 'reference',
+        to: [{ type: 'collection' }],
+        weak: true, // Prevents errors if collection is deleted
+      }],
+      validation: (Rule) => Rule.optional(),
     }),
   ],
   orderings: [
@@ -76,18 +91,20 @@ export default defineType({
       title: 'title',
       media: 'image',
       category: 'category',
-      order: 'order',
+      collections: 'collections',
     },
     prepare(selection) {
-      const { title, media, category, order } = selection;
+      const { title, media, category, collections } = selection;
       const categoryLabels: Record<string, string> = {
         color: 'Color',
         blancoYNegro: 'B&W',
         series: 'Series',
       };
+      const collectionCount = collections?.length || 0;
+      const collectionInfo = collectionCount > 0 ? ` • ${collectionCount} collection${collectionCount > 1 ? 's' : ''}` : '';
       return {
-        title: `${order}. ${title}`,
-        subtitle: categoryLabels[category] || category,
+        title: title,
+        subtitle: `${categoryLabels[category] || category}${collectionInfo}`,
         media,
       };
     },

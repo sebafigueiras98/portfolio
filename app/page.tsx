@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { client, urlFor } from "@/sanity/lib/client";
-import { FEATURED_IMAGES_QUERY, GALLERY_IMAGES_QUERY } from "@/sanity/lib/queries";
+import { FEATURED_IMAGES_QUERY, GALLERY_IMAGES_QUERY, FEATURED_COLLECTION_QUERY } from "@/sanity/lib/queries";
 import { FastAverageColor } from "fast-average-color";
+import NewCollection from "./components/NewCollection";
 
 type Category = 'color' | 'blancoYNegro' | 'series';
 
@@ -54,6 +55,25 @@ interface GalleryImage {
   order: number;
 }
 
+interface CollectionImage {
+  image?: {
+    asset?: {
+      url?: string;
+    };
+  };
+}
+
+interface Collection {
+  _id: string;
+  title: string;
+  slug?: {
+    current: string;
+  };
+  subtitle?: string;
+  description: string;
+  previewImages: CollectionImage[];
+}
+
 // Helper function to format exposure time
 const formatExposureTime = (exposureTime?: string): string => {
   if (!exposureTime) return '';
@@ -73,6 +93,7 @@ export default function Home() {
   const [visibleCount, setVisibleCount] = useState(16);
   const [featuredImages, setFeaturedImages] = useState<FeaturedImage[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [collection, setCollection] = useState<Collection | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
@@ -122,6 +143,20 @@ export default function Home() {
       }
     };
     fetchFeatured();
+  }, []);
+
+  // Fetch featured collection on mount
+  useEffect(() => {
+    const fetchCollection = async () => {
+      try {
+        const data = await client.fetch(FEATURED_COLLECTION_QUERY);
+        console.log('Featured collection:', data);
+        setCollection(data);
+      } catch (error) {
+        console.error('Error fetching collection:', error);
+      }
+    };
+    fetchCollection();
   }, []);
 
   // Extract colors from featured images
@@ -699,6 +734,9 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* New Collection Section */}
+      <NewCollection collection={collection} />
 
       {/* Centered Container for Gallery Section */}
       <div className="max-w-[1199px] mx-auto px-6 md:px-10">

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sanity/image-url": "^2.0.2",
+    "@sanity/orderable-document-list": "^1.4.2",
     "@sanity/vision": "^5.1.0",
     "fast-average-color": "^9.5.0",
     "next": "16.1.1",

@@ -1,10 +1,12 @@
 import { defineType, defineField } from 'sanity';
+import { orderRankField } from '@sanity/orderable-document-list';
 
 export default defineType({
   name: 'featuredImage',
   title: 'Featured Images (Carousel)',
   type: 'document',
   fields: [
+    orderRankField({ type: 'featuredImage' }),
     defineField({
       name: 'title',
       title: 'Title',
@@ -26,7 +28,8 @@ export default defineType({
       title: 'Order',
       type: 'number',
       description: 'Position in the carousel (lower numbers appear first)',
-      validation: (Rule) => Rule.required().min(0),
+      hidden: true, // Hidden - use drag & drop to reorder instead
+      initialValue: 0,
     }),
     defineField({
       name: 'caption',
@@ -53,12 +56,11 @@ export default defineType({
     select: {
       title: 'title',
       media: 'image',
-      order: 'order',
     },
     prepare(selection) {
-      const { title, media, order } = selection;
+      const { title, media } = selection;
       return {
-        title: `${order}. ${title}`,
+        title: title,
         media,
       };
     },
