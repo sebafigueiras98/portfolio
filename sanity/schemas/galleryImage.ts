@@ -68,7 +68,6 @@ export default defineType({
         to: [{ type: 'collection' }],
         weak: true, // Prevents errors if collection is deleted
       }],
-      validation: (Rule) => Rule.optional(),
     }),
   ],
   orderings: [
