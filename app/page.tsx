@@ -418,9 +418,9 @@ export default function Home() {
               <a href="mailto:sebafigueiras@gmail.com" className="hover:opacity-70 transition-opacity">
                 email
               </a>
-              <a href="https://instagram.com/sebafigueiras" target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">
+              {/* <a href="https://instagram.com/sebafigueiras" target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">
                 instagram
-              </a>
+              </a> */}
             </nav>
           </div>
         </div>
@@ -445,7 +445,7 @@ export default function Home() {
             {/* Previous Button */}
             <button
               onClick={prevCarouselImage}
-              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 text-white text-4xl md:text-6xl hover:opacity-70 transition-opacity"
+              className="absolute left-0 md:left-0 top-1/2 -translate-y-1/2 z-20 text-white text-4xl md:text-6xl hover:opacity-70 transition-opacity px-4 md:px-8 py-16 md:py-32"
               aria-label="Previous image"
             >
               ‹
@@ -722,7 +722,7 @@ export default function Home() {
             {/* Next Button */}
             <button
               onClick={nextCarouselImage}
-              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 text-white text-4xl md:text-6xl hover:opacity-70 transition-opacity"
+              className="absolute right-0 md:right-0 top-1/2 -translate-y-1/2 z-20 text-white text-4xl md:text-6xl hover:opacity-70 transition-opacity px-4 md:px-8 py-16 md:py-32"
               aria-label="Next image"
             >
               ›
@@ -840,7 +840,7 @@ export default function Home() {
                 e.stopPropagation();
                 prevImage();
               }}
-              className="absolute left-4 md:left-8 text-white text-4xl md:text-5xl hover:opacity-70 transition-opacity z-50"
+              className="absolute left-0 md:left-0 text-white text-4xl md:text-5xl hover:opacity-70 transition-opacity z-50 px-4 md:px-8 py-16 md:py-24"
             >
               ‹
             </button>
@@ -852,7 +852,7 @@ export default function Home() {
                 e.stopPropagation();
                 nextImage();
               }}
-              className="absolute right-4 md:right-8 text-white text-4xl md:text-5xl hover:opacity-70 transition-opacity z-50"
+              className="absolute right-0 md:right-0 text-white text-4xl md:text-5xl hover:opacity-70 transition-opacity z-50 px-4 md:px-8 py-16 md:py-24"
             >
               ›
             </button>

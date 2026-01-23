@@ -1,7 +1,7 @@
 export const FEATURED_IMAGES_QUERY = `*[_type == "featuredImage"] | order(orderRank) {
   _id,
-  title,
-  image {
+  "title": galleryImage->title,
+  "image": galleryImage->image {
     asset-> {
       url,
       metadata {
@@ -19,8 +19,8 @@ export const FEATURED_IMAGES_QUERY = `*[_type == "featuredImage"] | order(orderR
       }
     }
   },
-  caption,
-  location,
+  "caption": galleryImage->caption,
+  "location": galleryImage->location,
   order
 }`;
 

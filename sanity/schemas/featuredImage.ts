@@ -8,19 +8,11 @@ export default defineType({
   fields: [
     orderRankField({ type: 'featuredImage' }),
     defineField({
-      name: 'title',
-      title: 'Title',
-      type: 'string',
-      description: 'Internal name for this image',
-      validation: (Rule) => Rule.required(),
-    }),
-    defineField({
-      name: 'image',
-      title: 'Image',
-      type: 'image',
-      options: {
-        hotspot: true,
-      },
+      name: 'galleryImage',
+      title: 'Gallery Image',
+      type: 'reference',
+      to: [{ type: 'galleryImage' }],
+      description: 'Select an image from your gallery to feature in the carousel',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -30,19 +22,6 @@ export default defineType({
       description: 'Position in the carousel (lower numbers appear first)',
       hidden: true, // Hidden - use drag & drop to reorder instead
       initialValue: 0,
-    }),
-    defineField({
-      name: 'caption',
-      title: 'Caption',
-      type: 'text',
-      description: 'Optional caption or description for this image',
-      rows: 3,
-    }),
-    defineField({
-      name: 'location',
-      title: 'Location',
-      type: 'string',
-      description: 'Where was this photo taken?',
     }),
   ],
   orderings: [
@@ -54,13 +33,20 @@ export default defineType({
   ],
   preview: {
     select: {
-      title: 'title',
-      media: 'image',
+      title: 'galleryImage.title',
+      media: 'galleryImage.image',
+      category: 'galleryImage.category',
     },
     prepare(selection) {
-      const { title, media } = selection;
+      const { title, media, category } = selection;
+      const categoryLabels: Record<string, string> = {
+        color: 'Color',
+        blancoYNegro: 'B&W',
+        series: 'Series',
+      };
       return {
-        title: title,
+        title: title || 'Untitled',
+        subtitle: category ? `From ${categoryLabels[category] || category} gallery` : '',
         media,
       };
     },
